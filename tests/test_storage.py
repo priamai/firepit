@@ -18,8 +18,11 @@ from firepit.query import Order
 from firepit.query import Projection
 from firepit.query import Table
 
+from firepit import BundleManager
+
 from .helpers import tmp_storage
 
+import stix2
 
 def test_local(fake_bundle_file, tmpdir):
     store = tmp_storage(tmpdir)
@@ -40,6 +43,18 @@ def test_local(fake_bundle_file, tmpdir):
 
     store.delete()
 
+def test_bundle_manager(fake_bundle_file, tmpdir):
+    store = tmp_storage(tmpdir)
+
+    manager = BundleManager()
+
+    bundle_in = stix2.parse(fake_bundle_file)
+    manager.write_bundle(store,bundle_in)
+
+    bundle_out = manager.read_bundle(store,bundle_in.id)
+
+    assert len(bundle_in.objects) == len(bundle_out.objects)
+    store.delete()
 
 def test_in_memory(fake_bundle_file, tmpdir):
     with open(fake_bundle_file, 'r') as fp:
