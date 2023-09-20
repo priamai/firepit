@@ -10,7 +10,7 @@ import re
 from importlib import import_module
 from urllib.parse import urlparse
 
-from bundlemanager import BundleManager
+from firepit.bundlemanager import BundleManager
 
 from firepit.validate import validate_name
 
