@@ -28,25 +28,15 @@ class BundleManager(object):
     JSON_KEYS = ['external_references', 'labels','sectors','roles','protocols']
 
     OBJECT_REFS_CLS = ['observed-data','report','alert','grouping','note']
+
+    DEFAULT_STIX_VERSION ='2.1'
     def __init__(self,store):
         self._store = store
 
     @classmethod
-    def pq_table_exists(cls,store, table_name:str):
-        exists = False
-        try:
-            sql = "select exists(select relname from pg_class where relname='" + table_name + "')"
-            results = store._query(sql)
-            for result in results:
-                exists = result['exists']
-
-        except Exception as e:
-            logging.error(e)
-        return exists
-    @classmethod
     def get_ref_query(cls,store, sco_id):
 
-        if cls.pq_table_exists(store,"__reflist"):
+        if "__reflist" in store.types(private=True):
             query = Query()
             query.append(Table("__reflist"))
             query.append(Projection(['ref_name', 'source_ref', 'target_ref']))
@@ -93,7 +83,7 @@ class BundleManager(object):
             # augment with all stix fields
             new_object = dict(object)
             new_object['type'] = table_name
-            new_object['spec_version'] = '2.1'
+            new_object['spec_version'] = cls.DEFAULT_STIX_VERSION
             for key in cls.JSON_KEYS:
                 if key in object:
                     if type(object[key]) == str:
