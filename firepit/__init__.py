@@ -10,6 +10,8 @@ import re
 from importlib import import_module
 from urllib.parse import urlparse
 
+from bundlemanager import BundleManager
+
 from firepit.validate import validate_name
 
 def get_storage(url, session_id=None):
