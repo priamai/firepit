@@ -13,6 +13,7 @@ import ujson
 
 from firepit import stix21
 
+OBJECT_REFS_TYPES = ['observed-data','report','alert','grouping','note']
 
 class GeneratorIO:
     '''Convert a generator into a file-like object'''
@@ -169,7 +170,7 @@ def flatten_21(obj):
     obj_type = obj['type']
     if obj_type == 'identity':
         return [obj]
-    elif obj_type == 'observed-data':
+    elif obj_type in OBJECT_REFS_TYPES:
         for ref in obj['object_refs']:
             # Append pseudo-relationship for "Observtion CONTAINS SCO"
             results.append({
