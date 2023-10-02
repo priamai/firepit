@@ -140,7 +140,7 @@ class BundleManager(object):
         store.cache(bundle.id, bundle_dict)
 
     @classmethod
-    def read_bundle(cls,store,stix_id:str)->dict:
+    def read_bundle(cls,store,stix_id:str,allow_custom=False)->dict:
         all_sco = cls.get_sco_query(store,stix_id)
         objects = []
         # rebuild the objects
@@ -150,7 +150,7 @@ class BundleManager(object):
 
         bundle_dict = {"type":"bundle","id":stix_id,"objects":objects}
 
-        bundle = stix2.parse(bundle_dict)
+        bundle = stix2.parse(bundle_dict,allow_custom=allow_custom)
 
         return bundle
 
@@ -167,3 +167,32 @@ class BundleManager(object):
         ids = [row['query_id'] for row in results]
 
         return ids
+
+    @classmethod
+    def delete_bundle(cls,store,stix_id):
+        results = store._query(f"SELECT COUNT(*) AS total FROM __queries WHERE query_id='{stix_id}'")
+        total_count = 0
+
+        for result in results:
+            total_count = result['total']
+
+        for table in store.types():
+            if "relationship" in store.tables():
+                query_delete_source = f"""
+                DELETE FROM "relationship" WHERE source_ref IN (SELECT sco_id FROM "__queries" WHERE query_id = '{stix_id}')
+                """
+                store._query(query_delete_source)
+
+                query_delete_target = f"""
+                DELETE FROM "relationship" WHERE target_ref IN (SELECT sco_id FROM "__queries" WHERE query_id = '{stix_id}')
+                """
+                store._query(query_delete_target)
+
+            query_delete = f"""
+            DELETE FROM "{table}" WHERE id IN (SELECT sco_id FROM "__queries" WHERE query_id = '{stix_id}')
+            """
+
+            store._query(query_delete)
+
+        store._query(f"DELETE FROM __queries WHERE query_id='{stix_id}'")
+        return total_count

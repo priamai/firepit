@@ -43,18 +43,23 @@ def test_local(fake_bundle_file, tmpdir):
 
     store.delete()
 
-def test_bundle_manager(fake_bundle_file, tmpdir):
+def test_bundle_manager(standard_bundle_file, tmpdir):
     store = tmp_storage(tmpdir)
 
-    manager = BundleManager()
+    with open(standard_bundle_file,'r') as fp:
+        data = ujson.loads(fp.read())
 
-    bundle_in = stix2.parse(fake_bundle_file)
-    manager.write_bundle(store,bundle_in)
+        bundle_in = stix2.parse(data,allow_custom=False)
+        BundleManager.write_bundle(store,bundle_in)
 
-    bundle_out = manager.read_bundle(store,bundle_in.id)
+        bundle_out = BundleManager.read_bundle(store,bundle_in.id)
 
-    assert len(bundle_in.objects) == len(bundle_out.objects)
-    store.delete()
+        assert len(bundle_in.objects) == len(bundle_out.objects)
+
+        count = BundleManager.delete_bundle(store,bundle_in.id)
+
+        assert count == len(bundle_out.objects)
+        store.delete()
 
 def test_in_memory(fake_bundle_file, tmpdir):
     with open(fake_bundle_file, 'r') as fp:

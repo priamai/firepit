@@ -15,6 +15,11 @@ def fake_bundle_file_2():
     cwd = os.path.dirname(os.path.abspath(__file__))
     return os.path.join(cwd, 'test_bundle_2.json')
 
+@pytest.fixture
+def standard_bundle_file():
+    cwd = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(cwd, 'test_bundle_standard.json')
+
 
 @pytest.fixture
 def ccoe_bundle():
