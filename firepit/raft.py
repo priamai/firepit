@@ -174,8 +174,7 @@ def flatten_21(obj):
         for ref in obj['object_refs']:
             # Append pseudo-relationship for "Observtion CONTAINS SCO"
             results.append({
-                'type': '__reflist',
-                'ref_name': 'object_refs',
+                'type': '__contains',
                 'source_ref': oid,
                 'target_ref': str(ref)
             })
@@ -191,17 +190,16 @@ def flatten_21(obj):
         elif prop.endswith('_refs'):
             if not isinstance(val, list):
                 val = [val]
-            if prop != 'object_refs':
-                for ref in val:
-                    ref = str(ref)  # Ensure it's a plain string
-                    if ref != oid:  # Avoid bogus references
-                        sro = {
-                            'type': '__reflist',
-                            'ref_name': prop,
-                            'source_ref': oid,
-                            'target_ref': ref
-                        }
-                        results.append(sro)
+            for ref in val:
+                ref = str(ref)  # Ensure it's a plain string
+                if ref != oid:  # Avoid bogus references
+                    sro = {
+                        'type': '__reflist',
+                        'ref_name': prop,
+                        'source_ref': oid,
+                        'target_ref': ref
+                    }
+                    results.append(sro)
 
             # Store prop name to remove later
             ref_lists.append(prop)
@@ -217,7 +215,7 @@ def flatten(obs):
     """
     Convert ref lists to objects, add ids if missing, etc.
     """
-    if obs.get('spec_version', '2.0') == '2.1':
+    if obs.get('spec_version', '2.0') == '2.1' or 'object_refs' in obs:
         return flatten_21(obs)
 
     if 'objects' not in obs:
