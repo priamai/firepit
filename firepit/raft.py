@@ -172,7 +172,7 @@ def flatten_21(obj):
         return [obj]
     elif obj_type in OBJECT_REFS_TYPES:
         for ref in obj['object_refs']:
-            # Append pseudo-relationship for "Observtion CONTAINS SCO"
+            # Append pseudo-relationship for "Object CONTAINS Object"
             results.append({
                 'type': '__contains',
                 'source_ref': oid,

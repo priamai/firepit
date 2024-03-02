@@ -247,6 +247,9 @@ def translate(
     # columns we need to "unwrap"
     unwrap = set()
 
+    # "Unmapped" columns that we need to drop
+    unmapped = []
+
     logger.debug('columns: %s', cols)
     for col in cols:
         logger.debug('column: %s', col)
@@ -298,7 +301,10 @@ def translate(
         else:
             # Drop unmapped columns
             logger.debug('DROP unmapped column "%s"', col)
-            df = df.drop(col, axis=1)
+            unmapped.append(col)
+
+    # Drop any columns that weren't mapped
+    df = df.drop(unmapped, axis=1)
 
     # Run transformers
     for txf_col, txf_name in txf_cols.items():
@@ -309,8 +315,7 @@ def translate(
         elif txf_name == 'EpochToTimestamp':  # QRadar, QDL
             df[txf_col] = (pd.to_datetime(df[txf_col].astype(int),
                                           unit="ms",
-                                          utc=True,
-                                          infer_datetime_format=True)
+                                          utc=True)
                            .dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ"))
         elif txf_name in ('FilterIPv4List', 'FilterIPv6List'):
             pass  # We already did this
