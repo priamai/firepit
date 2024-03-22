@@ -27,7 +27,7 @@ import json
 class BundleManager(object):
     JSON_KEYS = ['external_references', 'labels','sectors','roles','protocols']
 
-    OBJECT_REFS_CLS = ['observed-data','report','alert','grouping','note']
+    OBJECT_REFS_CLS = ['observed-data','report','alert','grouping','note', 'opinion']
 
     DEFAULT_STIX_VERSION ='2.1'
     def __init__(self,store):
