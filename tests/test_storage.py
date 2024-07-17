@@ -52,6 +52,10 @@ def test_bundle_manager(standard_bundle_file, tmpdir):
         bundle_in = stix2.parse(data,allow_custom=False)
         BundleManager.write_bundle(store,bundle_in)
 
+        # list all bundles
+        bundle_ids = BundleManager.read_bundle_ids(store)
+
+        assert len(bundle_ids)==1
         bundle_out = BundleManager.read_bundle(store,bundle_in.id)
 
         assert len(bundle_in.objects) == len(bundle_out.objects)

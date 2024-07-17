@@ -84,6 +84,7 @@ class BundleManager(object):
             new_object = dict(object)
             new_object['type'] = table_name
             new_object['spec_version'] = cls.DEFAULT_STIX_VERSION
+
             for key in cls.JSON_KEYS:
                 if key in object:
                     if type(object[key]) == str:
@@ -161,6 +162,7 @@ class BundleManager(object):
         query.append(Projection(['query_id']))
         p1 = Predicate("query_id", "LIKE","bundle%")
         where = Filter([p1])
+        query.append(Unique())
         query.append(where)
 
         results = store.run_query(query).fetchall()
