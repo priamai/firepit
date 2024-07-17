@@ -156,7 +156,7 @@ class BundleManager(object):
         return bundle
 
     @classmethod
-    def read_bundle_ids(cls, store):
+    def read_bundle_ids(cls, store,limit:int=100,offset:int=0):
         query = Query()
         query.append(Table("__queries"))
         query.append(Projection(['query_id']))
@@ -164,6 +164,11 @@ class BundleManager(object):
         where = Filter([p1])
         query.append(Unique())
         query.append(where)
+
+        if limit:
+            query.append(Limit(limit))
+        if offset:
+            query.append(Offset(offset))
 
         results = store.run_query(query).fetchall()
         ids = [row['query_id'] for row in results]
