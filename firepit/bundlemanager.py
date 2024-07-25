@@ -186,18 +186,31 @@ class BundleManager(object):
         for table in store.types():
             if "relationship" in store.tables():
                 query_delete_source = f"""
-                DELETE FROM "relationship" WHERE source_ref IN (SELECT sco_id FROM "__queries" WHERE query_id = '{stix_id}')
+                DELETE FROM "relationship" WHERE source_ref IN (SELECT sco_id FROM "__queries" WHERE query_id = '{stix_id}'
+                AND sco_id NOT IN (SELECT sco_id FROM "__queries" GROUP BY sco_id HAVING COUNT(sco_id) > 1))
                 """
                 store._query(query_delete_source)
 
                 query_delete_target = f"""
-                DELETE FROM "relationship" WHERE target_ref IN (SELECT sco_id FROM "__queries" WHERE query_id = '{stix_id}')
+                DELETE FROM "relationship" WHERE target_ref IN (SELECT sco_id FROM "__queries" WHERE query_id = '{stix_id}'
+                AND sco_id NOT IN (SELECT sco_id FROM "__queries" GROUP BY sco_id HAVING COUNT(sco_id) > 1))
                 """
                 store._query(query_delete_target)
 
             query_delete = f"""
-            DELETE FROM "{table}" WHERE id IN (SELECT sco_id FROM "__queries" WHERE query_id = '{stix_id}')
-            """
+                            DELETE FROM "{table}"
+                            WHERE id IN (
+                                SELECT sco_id
+                                FROM "__queries"
+                                WHERE query_id = '{stix_id}'
+                                AND sco_id NOT IN (
+                                    SELECT sco_id
+                                    FROM "__queries"
+                                    GROUP BY sco_id
+                                    HAVING COUNT(sco_id) > 1
+                                )
+                             )
+                            """
 
             store._query(query_delete)
 
