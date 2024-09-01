@@ -121,6 +121,24 @@ class BundleManager(object):
             stix_dicts.append(reduced_object)
 
         return stix_dicts
+    
+    @classmethod
+    def get_bundle_by_sco_id(cls, store, stix_id, allow_custom=False) -> dict:
+        query = Query()
+        query.append(Table("__queries"))
+        query.append(Projection(['query_id']))
+        p1 = Predicate("sco_id", "=", stix_id)
+        where = Filter([p1])
+        query.append(where)
+
+        results = store.run_query(query).fetchall()
+        bundle_ids = [row['query_id'] for row in results]
+
+        if len(bundle_ids) > 0:
+            bundle_id = bundle_ids[0]
+            return cls.read_bundle(store,bundle_id, allow_custom=allow_custom)
+        else:
+            return None
 
     @classmethod
     def get_sco_query(cls,store,bundle_id:str)->list[str]:
