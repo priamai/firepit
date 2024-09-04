@@ -33,6 +33,18 @@ class BundleManager(object):
     def __init__(self,store):
         self._store = store
 
+    
+    def _add_file_hashes(self, object_dict):
+        hashes = {}
+        copy_dict = object_dict.copy()
+        for key, value in copy_dict.items():
+            if key.startswith("hashes."):
+                hash_type = key.split(".")[1].replace("'", "").replace('"', '')
+                hashes[hash_type] = value
+                object_dict.pop(key)
+        object_dict["hashes"] = hashes
+        return object_dict
+
     @classmethod
     def get_ref_query(cls,store, sco_id):
 
@@ -165,10 +177,11 @@ class BundleManager(object):
         # rebuild the objects
         for sco_id in all_sco:
             object_dicts = cls.get_sco_by_id(store,sco_id)
-            objects += object_dicts
-
+            for object_dict in object_dicts:
+                if object_dict["id"].startswith("file"):
+                    object_dict = cls._add_file_hashes(store, object_dict)
+                objects += object_dicts
         bundle_dict = {"type":"bundle","id":stix_id,"objects":objects}
-
         bundle = stix2.parse(bundle_dict,allow_custom=allow_custom)
 
         return bundle
