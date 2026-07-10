@@ -14,6 +14,7 @@ from firepit.exceptions import UnknownViewname
 from firepit.pgcommon import (CHECK_FOR_COMMON_SCHEMA, COLUMNS_TABLE,
                               CHECK_FOR_QUERIES_TABLE, INTERNAL_TABLES,
                               LIKE_BIN, MATCH_BIN, MATCH_FUN, SUBNET_FUN,
+                              TABLE_KIND,
                               _rewrite_view_def, _infer_type, pg_shorten)
 from firepit.splitter import SqlWriter
 from firepit.sqlstorage import DB_VERSION
@@ -194,7 +195,7 @@ class PgStorage(SqlStorage):
                 views[row['name']] = row
             cursor = self._execute('BEGIN;')
             self._execute('DROP TABLE __symtable', cursor)
-            stmt = ('CREATE UNLOGGED TABLE IF NOT EXISTS "__symtable" '
+            stmt = (f'CREATE {TABLE_KIND}TABLE IF NOT EXISTS "__symtable" '
                     '(name TEXT, type TEXT, appdata TEXT,'
                     ' UNIQUE(name));')
             self._execute(stmt, cursor)
@@ -243,8 +244,8 @@ class PgStorage(SqlStorage):
         return cursor
 
     def _create_table(self, tablename, columns):
-        # Same as base class, but disable WAL
-        stmt = f'CREATE UNLOGGED TABLE "{tablename}" ('
+        # Same as base class, but optionally disable WAL (UNLOGGED)
+        stmt = f'CREATE {TABLE_KIND}TABLE "{tablename}" ('
         stmt += ','.join([f'"{colname}" {coltype}' for colname, coltype in columns.items()])
         stmt += ');'
         logger.debug('_create_table: "%s"', stmt)

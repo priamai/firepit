@@ -4,6 +4,7 @@ interface) and aio.asyncpgstorage.py (the async interface).
 """
 
 import logging
+import os
 import re
 import uuid
 from collections import defaultdict
@@ -12,6 +13,19 @@ from firepit.sqlstorage import infer_type
 
 
 logger = logging.getLogger(__name__)
+
+
+def _resolve_table_kind():
+    # Default LOGGED (crash-safe). UNLOGGED tables are faster to write but
+    # PostgreSQL TRUNCATES every UNLOGGED table on any unclean shutdown/crash —
+    # which silently wiped all firepit data (incl. the __metadata dbversion row,
+    # causing "expected 2.2" mismatches on restart). Opt back in only if you can
+    # afford to lose everything on a crash: FIREPIT_PG_UNLOGGED_TABLES=true.
+    val = os.environ.get('FIREPIT_PG_UNLOGGED_TABLES', 'false').strip().lower()
+    return 'UNLOGGED ' if val in ('1', 'true', 'yes', 'on') else ''
+
+
+TABLE_KIND = _resolve_table_kind()
 
 
 CHECK_FOR_QUERIES_TABLE = (
@@ -47,26 +61,26 @@ RETURNS boolean AS $$
     SELECT addr::inet <<= net::inet;
 $$ LANGUAGE SQL;'''
 
-METADATA_TABLE = ('CREATE UNLOGGED TABLE IF NOT EXISTS "__metadata" '
+METADATA_TABLE = (f'CREATE {TABLE_KIND}TABLE IF NOT EXISTS "__metadata" '
                   '(name TEXT, value TEXT)')
 
-SYMTABLE = ('CREATE UNLOGGED TABLE IF NOT EXISTS "__symtable" '
+SYMTABLE = (f'CREATE {TABLE_KIND}TABLE IF NOT EXISTS "__symtable" '
             '(name TEXT, type TEXT, appdata TEXT,'
             ' UNIQUE(name))')
 
-QUERIES_TABLE = ('CREATE UNLOGGED TABLE IF NOT EXISTS "__queries" '
+QUERIES_TABLE = (f'CREATE {TABLE_KIND}TABLE IF NOT EXISTS "__queries" '
                  '(sco_id TEXT, query_id TEXT)')
 
-CONTAINS_TABLE = ('CREATE UNLOGGED TABLE IF NOT EXISTS "__contains" '
+CONTAINS_TABLE = (f'CREATE {TABLE_KIND}TABLE IF NOT EXISTS "__contains" '
                   '(source_ref TEXT, target_ref TEXT, x_firepit_rank INTEGER,'
                   ' UNIQUE(source_ref, target_ref));')
 
-COLUMNS_TABLE = ('CREATE UNLOGGED TABLE IF NOT EXISTS "__columns" '
+COLUMNS_TABLE = (f'CREATE {TABLE_KIND}TABLE IF NOT EXISTS "__columns" '
                  '(otype TEXT, path TEXT, shortname TEXT, dtype TEXT,'
                  ' UNIQUE(otype, path));')
 
 # Bootstrap some common SDO tables
-ID_TABLE = ('CREATE UNLOGGED TABLE "identity" ('
+ID_TABLE = (f'CREATE {TABLE_KIND}TABLE "identity" ('
             ' "id" TEXT UNIQUE,'
             ' "identity_class" TEXT,'
             ' "name" TEXT,'
@@ -74,7 +88,7 @@ ID_TABLE = ('CREATE UNLOGGED TABLE "identity" ('
             ' "modified" TEXT'
             ')')
 
-OD_TABLE = ('CREATE UNLOGGED TABLE "observed-data" ('
+OD_TABLE = (f'CREATE {TABLE_KIND}TABLE "observed-data" ('
             ' "id" TEXT UNIQUE,'
             ' "created_by_ref" TEXT,'
             ' "created" TEXT,'

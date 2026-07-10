@@ -14,6 +14,7 @@ from firepit.exceptions import (InvalidAttr, InvalidStixPath, UnknownViewname,
 from firepit.pgcommon import (CHECK_FOR_COMMON_SCHEMA,
                               CHECK_FOR_QUERIES_TABLE, INTERNAL_TABLES,
                               LIKE_BIN, MATCH_BIN, MATCH_FUN, SUBNET_FUN,
+                              TABLE_KIND,
                               _rewrite_view_def, _infer_type, pg_shorten)
 from firepit.query import Column, Limit, Offset, Order, Projection, Query
 from firepit.splitter import RecordList
@@ -405,8 +406,8 @@ class AsyncpgStorage(AsyncStorage):
         await cursor.execute(stmt, values)
 
     async def new_type(self, obj_type, schema):
-        # Same as base class, but disable WAL
-        stmt = f'CREATE UNLOGGED TABLE "{obj_type}" ('
+        # Same as base class, but optionally disable WAL (UNLOGGED)
+        stmt = f'CREATE {TABLE_KIND}TABLE "{obj_type}" ('
         stmt += ','.join([f'"{colname}" {coltype}' for colname, coltype in schema.items()])
         stmt += ')'
         logger.debug('new_table: %s', stmt)
