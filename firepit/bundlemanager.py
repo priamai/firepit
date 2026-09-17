@@ -42,7 +42,10 @@ class BundleManager(object):
                 hash_type = key.split(".")[1].replace("'", "").replace('"', '')
                 hashes[hash_type] = value
                 object_dict.pop(key)
-        object_dict["hashes"] = hashes
+        # A file known only by its name has no hashes. An empty `hashes` is invalid
+        # STIX, and stix2.parse refusing it made the whole bundle unreadable.
+        if hashes:
+            object_dict["hashes"] = hashes
         return object_dict
 
     @classmethod

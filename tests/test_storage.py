@@ -65,6 +65,25 @@ def test_bundle_manager(standard_bundle_file, tmpdir):
         assert count == len(bundle_out.objects)
         store.delete()
 
+def test_bundle_manager_reads_a_file_known_only_by_name(tmpdir):
+    # A File with a name and no hashes is valid STIX 2.1. It used to write fine and
+    # then fail on read -- `hashes` was always set, stix2 refuses an empty one -- so
+    # the whole bundle became unreadable (ava-api GET /stix/bundles/{id} -> 500).
+    store = tmp_storage(tmpdir)
+    named = stix2.File(name="stg.exe")
+    hashed = stix2.File(name="agent.exe", hashes={"SHA-256": "a" * 64})
+    bundle_in = stix2.Bundle(objects=[named, hashed])
+    BundleManager.write_bundle(store, bundle_in)
+
+    bundle_out = BundleManager.read_bundle(store, bundle_in.id)
+
+    files = {o.id: o for o in bundle_out.objects}
+    assert set(files) == {named.id, hashed.id}
+    assert files[named.id].name == "stg.exe" and "hashes" not in files[named.id]
+    assert files[hashed.id].hashes == {"SHA-256": "a" * 64}
+    store.delete()
+
+
 def test_in_memory(fake_bundle_file, tmpdir):
     with open(fake_bundle_file, 'r') as fp:
         bundle = ujson.loads(fp.read())
